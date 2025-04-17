@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Cálculo de Medicamentos</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Toastify CSS -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container">
+        <a class="navbar-brand" href="#">💊 PharmCalc</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="cadastroLink"
+                >Cadastro de Medicamentos</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" id="calculoLink"
+                >Cálculo de Tratamento</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <!-- Formulário de Cadastro -->
+      <div id="cadastroSection">
+        <h2 class="mb-4">📝 Cadastro de Medicamentos</h2>
+        <form id="medicamentoForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nome do Medicamento</label>
+              <input type="text" class="form-control" id="nome" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Código de Barras</label>
+              <input
+                type="text"
+                class="form-control"
+                id="codigoBarras"
+                required
+              />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Composição</label>
+            <input type="text" class="form-control" id="composicao" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Imagem do Medicamento</label>
+            <div class="input-group">
+              <input
+                type="file"
+                class="form-control"
+                id="imagem"
+                accept="image/*"
+              />
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                id="limparImagem"
+              >
+                🗑️ Limpar
+              </button>
+            </div>
+            <div
+              id="previewImagem"
+              class="mt-2 text-center"
+              style="display: none"
+            >
+              <img
+                src=""
+                alt="Preview"
+                style="max-height: 200px; max-width: 100%"
+                class="img-thumbnail"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Tipo de Volume</label>
+              <div class="input-group">
+                <select class="form-select" id="tipoVolume" required>
+                  <option value="">Selecione...</option>
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#tiposVolumeModal"
+                >
+                  ⚙️ Gerenciar
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Quantidade por Embalagem</label>
+              <input
+                type="number"
+                class="form-control"
+                id="qtdPorEmbalagem"
+                required
+              />
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Tipo de Unidade</label>
+              <div class="input-group">
+                <select class="form-select" id="tipoUnidade" required>
+                  <option value="">Selecione...</option>
+                </select>
+                <button
+                  type="button"
+                  class="btn btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#tiposUnidadeModal"
+                >
+                  ⚙️ Gerenciar
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            Cadastrar Medicamento
+          </button>
+        </form>
+
+        <!-- Nova tabela de medicamentos -->
+        <div class="mt-5">
+          <h3>Medicamentos Cadastrados</h3>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-primary">
+                <tr>
+                  <th>Nome</th>
+                  <th>Código de Barras</th>
+                  <th>Composição</th>
+                  <th>Tipo Volume</th>
+                  <th>Tipo Unidade</th>
+                  <th>Qtd/Embalagem</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="medicamentosTable">
+                <!-- Dados serão inseridos via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Modal de Edição -->
+        <div class="modal fade" id="editModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Editar Medicamento</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="editForm">
+                  <input type="hidden" id="editId" />
+                  <div class="mb-3">
+                    <label class="form-label">Nome do Medicamento</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editNome"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Código de Barras</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editCodigoBarras"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Composição</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editComposicao"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Imagem do Medicamento</label>
+                    <div class="input-group">
+                      <input
+                        type="file"
+                        class="form-control"
+                        id="editImagem"
+                        accept="image/*"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        id="editLimparImagem"
+                      >
+                        🗑️ Limpar
+                      </button>
+                    </div>
+                    <div
+                      id="editPreviewImagem"
+                      class="mt-2 text-center"
+                      style="display: none"
+                    >
+                      <img
+                        src=""
+                        alt="Preview"
+                        style="max-height: 200px; max-width: 100%"
+                        class="img-thumbnail"
+                      />
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Tipo de Volume</label>
+                    <select class="form-select" id="editTipoVolume" required>
+                      <option value="comprimido">Comprimido</option>
+                      <option value="capsula">Cápsula</option>
+                      <option value="pomada">Pomada</option>
+                      <option value="liquido">Líquido</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Tipo de Unidade</label>
+                    <select class="form-select" id="editTipoUnidade" required>
+                      <option value="">Selecione...</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Quantidade por Embalagem</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editQtdPorEmbalagem"
+                      required
+                    />
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="saveEdit">
+                  Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal de Gerenciamento de Tipos de Volume -->
+        <div class="modal fade" id="tiposVolumeModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Gerenciar Tipos de Volume</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="tipoVolumeForm" class="mb-3">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="novoTipoVolume"
+                      placeholder="Novo tipo de volume"
+                      required
+                    />
+                    <button class="btn btn-primary" type="submit">
+                      Adicionar
+                    </button>
+                  </div>
+                </form>
+                <div class="list-group" id="listaTiposVolume">
+                  <!-- Lista será preenchida via JavaScript -->
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal de Gerenciamento de Tipos de Unidade -->
+        <div class="modal fade" id="tiposUnidadeModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Gerenciar Tipos de Unidade</h5>
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <form id="tipoUnidadeForm" class="mb-3">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="novoTipoUnidade"
+                      placeholder="Novo tipo de unidade"
+                      required
+                    />
+                    <button class="btn btn-primary" type="submit">
+                      Adicionar
+                    </button>
+                  </div>
+                </form>
+                <div class="list-group" id="listaTiposUnidade">
+                  <!-- Lista será preenchida via JavaScript -->
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal de Confirmação de Exclusão -->
+        <div class="modal fade" id="deleteModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button
+                  type="button"
+                  class="btn-close btn-close-white"
+                  data-bs-dismiss="modal"
+                ></button>
+              </div>
+              <div class="modal-body">
+                <p>
+                  Tem certeza que deseja excluir o medicamento "<span
+                    id="deleteMedicamentoNome"
+                  ></span
+                  >"?
+                </p>
+                <p class="text-muted mb-0">
+                  <small>Esta ação não pode ser desfeita.</small>
+                </p>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                  Confirmar Exclusão
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulário de Cálculo -->
+      <div id="calculoSection" style="display: none">
+        <h2 class="mb-4">🧮 Cálculo de Tratamento</h2>
+        <form id="calculoForm">
+          <div class="row">
+            <div class="col-md-8">
+              <!-- Área de seleção do medicamento -->
+              <div class="mb-4">
+                <label class="form-label">Selecione o Medicamento</label>
+                <div class="input-group">
+                  <select class="form-select" id="medicamentoSelect" required>
+                    <option value="">Selecione...</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    id="scanButton"
+                    title="Escanear código de barras"
+                  >
+                    <i class="fas">📷</i>
+                  </button>
+                </div>
+                <div class="mt-2" id="codigoBarrasArea" style="display: none">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="codigoBarrasBusca"
+                      placeholder="Digite o código de barras"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      id="buscarPorCodigo"
+                    >
+                      Buscar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Linha de inputs -->
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">Quantidade por Dose</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="qtdPorDose"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Frequência (horas)</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="frequencia"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Duração (dias)</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="duracao"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Botão de calcular -->
+              <div class="mb-3">
+                <button type="submit" class="btn btn-primary">
+                  Calcular Tratamento
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview do medicamento -->
+            <div class="col-md-4">
+              <div
+                id="previewMedicamento"
+                class="preview-card"
+                style="display: none"
+              >
+                <div id="imagemMedicamentoPreview" class="mb-2">
+                  <!-- A imagem será inserida aqui via JavaScript -->
+                </div>
+                <div id="previewInfo" class="text-start">
+                  <!-- As informações serão inseridas aqui via JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div id="resultado" class="mt-4" style="display: none">
+          <div class="card">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4 text-center mb-3">
+                  <div id="imagemMedicamento" class="mb-2">
+                    <!-- A imagem será inserida aqui via JavaScript -->
+                  </div>
+                </div>
+                <div class="col-md-8">
+                  <h3 class="card-title">Resultado do Cálculo</h3>
+                  <div id="resultadoConteudo"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastify JS -->
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/toastify-js"
+    ></script>
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+  </body>
+</html>
