@@ -99,10 +99,10 @@ class TipoVolumeManager {
 class TipoUnidadeManager {
     constructor() {
         this.tipos = JSON.parse(localStorage.getItem('tiposUnidade')) || [
-            'Comprimido',
-            'Cápsula',
-            'Mililitro',
-            'Grama'
+            'UN',
+            'CX',
+            'MG',
+            'ML'
         ];
         this.salvarNoStorage();
     }
