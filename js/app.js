@@ -1,7 +1,7 @@
 // Gerenciamento de Estado
 class MedicamentoManager {
     constructor() {
-        this.medicamentos = JSON.parse(localStorage.getItem('medicamentos')) || [];
+        this.medicamentos = JSON.parse(localStorage.getItem('medicamentos')) || getMedicamentosPreCadastrados();
     }
 
     salvarMedicamento(medicamento) {
@@ -61,7 +61,8 @@ class TipoVolumeManager {
             'Comprimido',
             'Cápsula',
             'Pomada',
-            'Líquido'
+            'Líquido',
+            'Gotas'
         ];
         this.salvarNoStorage();
     }
@@ -100,7 +101,7 @@ class TipoUnidadeManager {
     constructor() {
         this.tipos = JSON.parse(localStorage.getItem('tiposUnidade')) || [
             'UN',
-            'CX',
+            'CPS',
             'MG',
             'ML'
         ];
@@ -236,22 +237,22 @@ document.getElementById('editLimparImagem').addEventListener('click', function()
 });
 
 // Cadastro de Medicamentos
+// Cadastro de Medicamentos
 medicamentoForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const imagemInput = document.getElementById('imagem');
-    let imagemBase64 = null;
     
     if (imagemInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const medicamento = {
-                id: Date.now().toString(),
+                id: crypto.randomUUID(),
                 nome: document.getElementById('nome').value.trim(),
                 codigoBarras: document.getElementById('codigoBarras').value.trim(),
                 composicao: document.getElementById('composicao').value.trim(),
                 tipoVolume: document.getElementById('tipoVolume').value,
-                qtdPorEmbalagem: parseInt(document.getElementById('qtdPorEmbalagem').value),
+                qtdPorEmbalagem: parseFloat(document.getElementById('qtdPorEmbalagem').value.replace(',', '.')),
                 tipoUnidade: document.getElementById('tipoUnidade').value,
                 imagem: e.target.result
             };
@@ -261,12 +262,12 @@ medicamentoForm.addEventListener('submit', (e) => {
         reader.readAsDataURL(imagemInput.files[0]);
     } else {
         const medicamento = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             nome: document.getElementById('nome').value.trim(),
             codigoBarras: document.getElementById('codigoBarras').value.trim(),
             composicao: document.getElementById('composicao').value.trim(),
             tipoVolume: document.getElementById('tipoVolume').value,
-            qtdPorEmbalagem: parseInt(document.getElementById('qtdPorEmbalagem').value),
+            qtdPorEmbalagem: parseFloat(document.getElementById('qtdPorEmbalagem').value.replace(',', '.')),
             tipoUnidade: document.getElementById('tipoUnidade').value,
             imagem: null
         };
@@ -274,6 +275,7 @@ medicamentoForm.addEventListener('submit', (e) => {
         salvarMedicamento(medicamento);
     }
 });
+
 
 // Função auxiliar para salvar medicamento
 function salvarMedicamento(medicamento) {
@@ -331,10 +333,35 @@ medicamentoSelect.addEventListener('change', function() {
     const medicamentoId = this.value;
     const previewDiv = document.getElementById('previewMedicamento');
     
+    const qtdGotasInput = document.getElementById('qtdGotas');
+    const qtdPorDoseInput = document.getElementById('qtdPorDose');
+    const frequencia = document.getElementById('frequencia');
+    const duracao = document.getElementById('duracao');
+    const resultadoDiv = document.getElementById('resultado');
+
+    // Oculta e limpa o resultado
+    resultadoDiv.style.display = 'none';
+    document.getElementById('resultadoConteudo').innerHTML = '';
+    
+      // Limpa apenas os campos relacionados ao medicamento
+    qtdGotasInput.value = '';
+    qtdPorDoseInput.value = '';
+    frequencia.value = '';
+    duracao.value = '';
+
     if (medicamentoId) {
         const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
         previewDiv.style.display = 'block';
         
+         // Mostrar ou esconder baseado no tipoVolume
+         if (medicamento.tipoVolume.toLowerCase() === 'gotas' || medicamento.tipoVolume.toLowerCase() === 'gota') {
+             qtdGotasContainer.style.display = 'block'; // Mostra o campo
+                          
+        } else {
+            qtdGotasContainer.style.display = 'none';  // Esconde o campo
+            document.getElementById('qtdGotas').value = ''; // Limpa o valor
+        }
+
         // Atualizar a imagem e informações do medicamento
         const imagemDiv = document.getElementById('imagemMedicamentoPreview');
         if (medicamento.imagem) {
@@ -362,9 +389,34 @@ medicamentoSelect.addEventListener('change', function() {
         `;
     } else {
         previewDiv.style.display = 'none';
+        qtdGotasContainer.style.display = 'none';
     }
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const medicamentoSelect = document.getElementById('medicamentoSelect');
+    const qtdGotasInput = document.getElementById('qtdGotas');
+    const qtdPorDoseInput = document.getElementById('qtdPorDose');
+    const medicamentoManager = new MedicamentoManager(); // Certifique-se que esta instância existe
+
+    if (qtdGotasInput && qtdPorDoseInput && medicamentoSelect) {
+        qtdGotasInput.addEventListener('input', function() {
+            // Obtém o medicamento selecionado
+            const medicamentoId = medicamentoSelect.value;
+            if (!medicamentoId) return; // Se nenhum medicamento estiver selecionado
+
+            const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
+            if (!medicamento) return; // Se o medicamento não for encontrado
+
+            // Converte o valor para float (tratando vírgula como separador decimal)
+            const qtdGotas = parseFloat(this.value.replace(',', '.')) || 0;
+            
+            // Calcula e atualiza o campo qtdPorDose
+            qtdPorDoseInput.value = (qtdGotas * medicamento.qtdPorEmbalagem).toFixed(2);
+        });
+    }
+});
+  
 // Modifique o event listener do formulário de cálculo
 calculoForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -392,9 +444,13 @@ calculoForm.addEventListener('submit', (e) => {
         <p><strong>Composição:</strong> ${medicamento.composicao}</p>
         <hr>
         <p><strong>Total de doses necessárias:</strong> ${totalDoses}</p>
-        <p><strong>Total de unidades necessárias:</strong> ${totalUnidades} ${medicamento.tipoVolume}(s)</p>
-        <p><strong>Embalagens necessárias:</strong> ${totalEmbalagens} ${totalEmbalagens === 1 ? 'embalagem' : 'embalagens'}</p>
+        <p><strong>Total de unidades necessárias:</strong> ${totalUnidades} ${medicamento.tipoUnidade}(s)</p> 
+        ${medicamento.tipoVolume.toLowerCase() !== 'gotas' && medicamento.tipoVolume.toLowerCase() !== 'gota' ? `
+            <p id="totalEmbalagens"><strong>Embalagens necessárias:</strong> ${totalEmbalagens} ${totalEmbalagens === 1 ? 'embalagem' : 'embalagens'}</p>
+            ` : ''}
     `;
+
+
 });
 
 // Adicionar após o evento de submit do medicamentoForm
@@ -438,7 +494,7 @@ let medicamentoParaExcluir = null;
 
 // Função para lidar com exclusão
 function handleDelete(e) {
-    const id = e.target.dataset.id;
+    const id = e.currentTarget.dataset.id;
     const medicamento = medicamentoManager.obterMedicamentoPorId(id);
     
     // Armazena o ID do medicamento para exclusão
@@ -478,7 +534,8 @@ document.getElementById('confirmDelete').addEventListener('click', () => {
 
 // Função para lidar com edição
 function handleEdit(e) {
-    const id = e.target.dataset.id;
+    debugger;
+    const id = e.currentTarget.dataset.id; 
     const medicamento = medicamentoManager.obterMedicamentoPorId(id);
     
     document.getElementById('editId').value = id;
@@ -513,7 +570,7 @@ document.getElementById('saveEdit').addEventListener('click', () => {
             codigoBarras: document.getElementById('editCodigoBarras').value.trim(),
             composicao: document.getElementById('editComposicao').value.trim(),
             tipoVolume: document.getElementById('editTipoVolume').value,
-            qtdPorEmbalagem: parseInt(document.getElementById('editQtdPorEmbalagem').value),
+            qtdPorEmbalagem: parseFloat(document.getElementById('editQtdPorEmbalagem').value.replace(',', '.')),
             tipoUnidade: document.getElementById('editTipoUnidade').value,
             imagem: imagemBase64
         };
@@ -730,3 +787,11 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarSelectTiposUnidade();
     atualizarListaTiposUnidade();
 }); 
+
+
+//Medicamentos ficticios - caso não tenha medicamentos cadastrados
+
+function getMedicamentosPreCadastrados() {
+    return [{ "id": "c26f9e8c-0a3b-4888-9318-6334ca9af659", "nome": "Forxiga 10 mg", "codigoBarras": "5000456070423", "composicao": "FORXIGA 10 mg: cada comprimido revestido contém 12,30 mg de dapagliflozina propanodiol, equivalente a 10 mg de dapagliflozina. Excipientes: celulose microcristalina, lactose, crospovidona, dióxido de silício, estearato de magnésio, álcool polivinílico, dióxido de titânio, macrogol, talco e óxido de ferro amarelo.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "803d26de-ab62-4d0f-9fa1-f2760addc7cb", "nome": "Nimesulida 100 mg", "codigoBarras": "7899620915039", "composicao": "Comprimidos: Nimesulida, lactose monoidratada, estearato de magnésio, celulose microcristalina, docusato de sódio, amidoglicolato de sódio, hiprolose, óleo vegetal hidrogenado.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "25382272-4847-4010-9f15-fef60c739788", "nome": "Dipirona 500mg", "codigoBarras": "7896714207551", "composicao": "Solução oral (gotas) de 500 mg/ml: frascos com 10 ml e 20 ml. Excipientes: sacarina sódica di-hidratada, metilparabeno, glicerol, edetato de cálcio dissódico hidratado, metabissulfito de sódio, sorbitol, amarelo de tartrazina e água purificada.", "tipoVolume": "Gotas", "qtdPorEmbalagem": 0.05, "tipoUnidade": "ML", "imagem": null }, { "id": "f2651e12-95ed-4235-89ff-8aa11583d0ff", "nome": "Amoxicilina 500 mg 21 comprimidos", "codigoBarras": "7898148298914", "composicao": "Excipiente: crospovidona, estearato de magnésio, celulose microcristalina, dióxido de silício coloidal, dióxido de titânio rutilo, glicolato de amido sódico, hidroxipropilcelulose/ polietilenoglicol e corante laca eritrosina.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 20, "tipoUnidade": "UN", "imagem": null }, { "id": "f5f15ce7-75ec-49ad-a2ec-da0bceb60877", "nome": "Losartana 50mg 30 comprimidos", "codigoBarras": "7896714208565", "composicao": "Cada comprimido revestido de losartana potás- sica contém: losartana potássica 50,00 mg Excipientes: lactose monoidratada, amido, dióxido de silício, estearato de magnésio, celulose microcristalina, hipromelose, macrogol e dióxido de titânio.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "a2abecb7-ea98-41ba-8845-3066536836be", "nome": "Dipirona 30 comprimidos", "codigoBarras": "7899547537208", "composicao": "Excipientes: Croscarmelose sódica, estearato de magnésio, dióxido de silício, sacarose e amido.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }]
+}
+
