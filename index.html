@@ -124,6 +124,8 @@
                 type="number"
                 class="form-control"
                 id="qtdPorEmbalagem"
+                step="any"
+                min="0"
                 required
               />
             </div>
@@ -457,6 +459,14 @@
 
               <!-- Linha de inputs -->
               <div class="row g-3 mb-3">
+                <div
+                  class="col-md-4"
+                  id="qtdGotasContainer"
+                  style="display: none"
+                >
+                  <label class="form-label">Quantidade por Gotas</label>
+                  <input type="number" class="form-control" id="qtdGotas" />
+                </div>
                 <div class="col-md-4">
                   <label class="form-label">Quantidade por Dose</label>
                   <input
