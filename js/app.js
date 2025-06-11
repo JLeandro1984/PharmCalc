@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Modifique o event listener do formulário de cálculo
 calculoForm.addEventListener('submit', (e) => {
     e.preventDefault();
-debugger
+    
     const medicamentoId = medicamentoSelect.value;
     const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
     const qtdPorDose = parseFloat(document.getElementById('qtdPorDose').value.replace(',', '.'));
@@ -534,7 +534,6 @@ document.getElementById('confirmDelete').addEventListener('click', () => {
 
 // Função para lidar com edição
 function handleEdit(e) {
-    debugger;
     const id = e.currentTarget.dataset.id; 
     const medicamento = medicamentoManager.obterMedicamentoPorId(id);
     
