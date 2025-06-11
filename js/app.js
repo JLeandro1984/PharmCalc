@@ -420,10 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Modifique o event listener do formulário de cálculo
 calculoForm.addEventListener('submit', (e) => {
     e.preventDefault();
-
+debugger
     const medicamentoId = medicamentoSelect.value;
     const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
-    const qtdPorDose = parseInt(document.getElementById('qtdPorDose').value);
+    const qtdPorDose = parseFloat(document.getElementById('qtdPorDose').value.replace(',', '.'));
     const frequencia = parseInt(document.getElementById('frequencia').value);
     const duracao = parseInt(document.getElementById('duracao').value);
 
@@ -552,6 +552,7 @@ function handleEdit(e) {
         img.src = medicamento.imagem;
         previewDiv.style.display = 'block';
     } else {
+        document.getElementById('editImagem').value = ""
         previewDiv.style.display = 'none';
     }
 
