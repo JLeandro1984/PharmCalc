@@ -237,7 +237,6 @@ document.getElementById('editLimparImagem').addEventListener('click', function()
 });
 
 // Cadastro de Medicamentos
-// Cadastro de Medicamentos
 medicamentoForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
@@ -391,15 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Modifique o event listener do formulário de cálculo
 calculoForm.addEventListener('submit', (e) => {
     e.preventDefault();
-debugger
+
     const medicamentoId = medicamentoSelect.value;
     const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
     const qtdPorDose = parseFloat(document.getElementById('qtdPorDose').value.replace(',', '.'));
     const frequencia = parseInt(document.getElementById('frequencia').value);
     const duracao = parseInt(document.getElementById('duracao').value);
-
-    debugger
-
+   
        // Cálculos
     let dosesPerDay = 24 / frequencia;
     let totalDoses = 0;
