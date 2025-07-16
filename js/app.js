@@ -333,7 +333,6 @@ medicamentoSelect.addEventListener('change', function() {
     const medicamentoId = this.value;
     const previewDiv = document.getElementById('previewMedicamento');
     
-    const qtdGotasInput = document.getElementById('qtdGotas');
     const qtdPorDoseInput = document.getElementById('qtdPorDose');
     const frequencia = document.getElementById('frequencia');
     const duracao = document.getElementById('duracao');
@@ -344,7 +343,6 @@ medicamentoSelect.addEventListener('change', function() {
     document.getElementById('resultadoConteudo').innerHTML = '';
     
       // Limpa apenas os campos relacionados ao medicamento
-    qtdGotasInput.value = '';
     qtdPorDoseInput.value = '';
     frequencia.value = '';
     duracao.value = '';
@@ -353,15 +351,6 @@ medicamentoSelect.addEventListener('change', function() {
         const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
         previewDiv.style.display = 'block';
         
-         // Mostrar ou esconder baseado no tipoVolume
-         if (medicamento.tipoVolume.toLowerCase() === 'gotas' || medicamento.tipoVolume.toLowerCase() === 'gota') {
-             qtdGotasContainer.style.display = 'block'; // Mostra o campo
-                          
-        } else {
-            qtdGotasContainer.style.display = 'none';  // Esconde o campo
-            document.getElementById('qtdGotas').value = ''; // Limpa o valor
-        }
-
         // Atualizar a imagem e informações do medicamento
         const imagemDiv = document.getElementById('imagemMedicamentoPreview');
         if (medicamento.imagem) {
@@ -389,49 +378,45 @@ medicamentoSelect.addEventListener('change', function() {
         `;
     } else {
         previewDiv.style.display = 'none';
-        qtdGotasContainer.style.display = 'none';
     }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     const medicamentoSelect = document.getElementById('medicamentoSelect');
-    const qtdGotasInput = document.getElementById('qtdGotas');
     const qtdPorDoseInput = document.getElementById('qtdPorDose');
     const medicamentoManager = new MedicamentoManager(); // Certifique-se que esta instância existe
 
-    if (qtdGotasInput && qtdPorDoseInput && medicamentoSelect) {
-        qtdGotasInput.addEventListener('input', function() {
-            // Obtém o medicamento selecionado
-            const medicamentoId = medicamentoSelect.value;
-            if (!medicamentoId) return; // Se nenhum medicamento estiver selecionado
-
-            const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
-            if (!medicamento) return; // Se o medicamento não for encontrado
-
-            // Converte o valor para float (tratando vírgula como separador decimal)
-            const qtdGotas = parseFloat(this.value.replace(',', '.')) || 0;
-            
-            // Calcula e atualiza o campo qtdPorDose
-            qtdPorDoseInput.value = (qtdGotas * medicamento.qtdPorEmbalagem).toFixed(2);
-        });
-    }
 });
   
 // Modifique o event listener do formulário de cálculo
 calculoForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    
+debugger
     const medicamentoId = medicamentoSelect.value;
     const medicamento = medicamentoManager.obterMedicamentoPorId(medicamentoId);
     const qtdPorDose = parseFloat(document.getElementById('qtdPorDose').value.replace(',', '.'));
     const frequencia = parseInt(document.getElementById('frequencia').value);
     const duracao = parseInt(document.getElementById('duracao').value);
 
-    // Cálculos
-    const dosesPerDay = 24 / frequencia;
-    const totalDoses = dosesPerDay * duracao;
-    const totalUnidades = totalDoses * qtdPorDose;
-    const totalEmbalagens = Math.ceil(totalUnidades / medicamento.qtdPorEmbalagem);
+    debugger
+
+       // Cálculos
+    let dosesPerDay = 24 / frequencia;
+    let totalDoses = 0;
+    let totalUnidades = 0;
+    let totalEmbalagens = 0;
+
+    if (medicamento.tipoVolume.toLowerCase() === 'gotas') {
+            totalDoses = qtdPorDose * dosesPerDay;
+            totalUnidades = totalDoses * duracao;
+            totalEmbalagens = totalUnidades / medicamento.qtdPorEmbalagem;
+    } else {
+     totalDoses = dosesPerDay * duracao;
+     totalUnidades = totalDoses * qtdPorDose;
+     totalEmbalagens = Math.ceil(totalUnidades / medicamento.qtdPorEmbalagem);
+    }
+
+ 
 
     // Exibir resultado
     resultado.style.display = 'block';
@@ -439,17 +424,30 @@ calculoForm.addEventListener('submit', (e) => {
     // Atualizar a imagem no resultado
     atualizarImagemMedicamento(medicamento, 'imagemMedicamento');
 
-    document.getElementById('resultadoConteudo').innerHTML = `
-        <p><strong>Medicamento:</strong> ${medicamento.nome}</p>
-        <p><strong>Composição:</strong> ${medicamento.composicao}</p>
-        <hr>
-        <p><strong>Total de doses necessárias:</strong> ${totalDoses}</p>
-        <p><strong>Total de unidades necessárias:</strong> ${totalUnidades} ${medicamento.tipoUnidade}(s)</p> 
-        ${medicamento.tipoVolume.toLowerCase() !== 'gotas' && medicamento.tipoVolume.toLowerCase() !== 'gota' ? `
-            <p id="totalEmbalagens"><strong>Embalagens necessárias:</strong> ${totalEmbalagens} ${totalEmbalagens === 1 ? 'embalagem' : 'embalagens'}</p>
-            ` : ''}
-    `;
+    if (medicamento.tipoVolume.toLowerCase() === 'gotas') { 
+        const frascosNecessarios = Math.ceil(totalUnidades / medicamento.qtdPorEmbalagem);
 
+        document.getElementById('resultadoConteudo').innerHTML = `
+                <p><strong>Medicamento:</strong> ${medicamento.nome}</p>
+                <p><strong>Composição:</strong> ${medicamento.composicao}</p>
+                <hr>
+                <p><strong>Total de gotas:</strong> ${totalUnidades}</p>
+                <p>Você precisará de aproximadamente <strong>${totalEmbalagens.toFixed(2)}</strong> mL para o tratamento completo.</p>  
+                 <p><strong>Quantidade de frascos necessária:</strong> ${frascosNecessarios} ${frascosNecessarios === 1 ? 'frasco' : 'frascos'}.</p>              
+        `;
+
+    } else {
+           document.getElementById('resultadoConteudo').innerHTML = `
+                <p><strong>Medicamento:</strong> ${medicamento.nome}</p>
+                <p><strong>Composição:</strong> ${medicamento.composicao}</p>
+                <hr>
+                <p><strong>Total de doses necessárias:</strong> ${totalDoses}</p>
+                <p><strong>Total de unidades necessárias:</strong> ${totalUnidades} ${medicamento.tipoUnidade}(s)</p> 
+                <p id="totalEmbalagens"><strong>Embalagens necessárias:</strong> ${totalEmbalagens} ${totalEmbalagens === 1 ? 'embalagem' : 'embalagens'}</p>              
+            `;
+
+    }
+ 
 
 });
 
@@ -534,6 +532,7 @@ document.getElementById('confirmDelete').addEventListener('click', () => {
 
 // Função para lidar com edição
 function handleEdit(e) {
+    debugger;
     const id = e.currentTarget.dataset.id; 
     const medicamento = medicamentoManager.obterMedicamentoPorId(id);
     
@@ -792,6 +791,6 @@ document.addEventListener('DOMContentLoaded', () => {
 //Medicamentos ficticios - caso não tenha medicamentos cadastrados
 
 function getMedicamentosPreCadastrados() {
-    return [{ "id": "c26f9e8c-0a3b-4888-9318-6334ca9af659", "nome": "Forxiga 10 mg", "codigoBarras": "5000456070423", "composicao": "FORXIGA 10 mg: cada comprimido revestido contém 12,30 mg de dapagliflozina propanodiol, equivalente a 10 mg de dapagliflozina. Excipientes: celulose microcristalina, lactose, crospovidona, dióxido de silício, estearato de magnésio, álcool polivinílico, dióxido de titânio, macrogol, talco e óxido de ferro amarelo.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "803d26de-ab62-4d0f-9fa1-f2760addc7cb", "nome": "Nimesulida 100 mg", "codigoBarras": "7899620915039", "composicao": "Comprimidos: Nimesulida, lactose monoidratada, estearato de magnésio, celulose microcristalina, docusato de sódio, amidoglicolato de sódio, hiprolose, óleo vegetal hidrogenado.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "25382272-4847-4010-9f15-fef60c739788", "nome": "Dipirona 500mg", "codigoBarras": "7896714207551", "composicao": "Solução oral (gotas) de 500 mg/ml: frascos com 10 ml e 20 ml. Excipientes: sacarina sódica di-hidratada, metilparabeno, glicerol, edetato de cálcio dissódico hidratado, metabissulfito de sódio, sorbitol, amarelo de tartrazina e água purificada.", "tipoVolume": "Gotas", "qtdPorEmbalagem": 0.05, "tipoUnidade": "ML", "imagem": null }, { "id": "f2651e12-95ed-4235-89ff-8aa11583d0ff", "nome": "Amoxicilina 500 mg 21 comprimidos", "codigoBarras": "7898148298914", "composicao": "Excipiente: crospovidona, estearato de magnésio, celulose microcristalina, dióxido de silício coloidal, dióxido de titânio rutilo, glicolato de amido sódico, hidroxipropilcelulose/ polietilenoglicol e corante laca eritrosina.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 20, "tipoUnidade": "UN", "imagem": null }, { "id": "f5f15ce7-75ec-49ad-a2ec-da0bceb60877", "nome": "Losartana 50mg 30 comprimidos", "codigoBarras": "7896714208565", "composicao": "Cada comprimido revestido de losartana potás- sica contém: losartana potássica 50,00 mg Excipientes: lactose monoidratada, amido, dióxido de silício, estearato de magnésio, celulose microcristalina, hipromelose, macrogol e dióxido de titânio.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "a2abecb7-ea98-41ba-8845-3066536836be", "nome": "Dipirona 30 comprimidos", "codigoBarras": "7899547537208", "composicao": "Excipientes: Croscarmelose sódica, estearato de magnésio, dióxido de silício, sacarose e amido.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }]
+    return [{ "id": "c26f9e8c-0a3b-4888-9318-6334ca9af659", "nome": "Forxiga 10 mg", "codigoBarras": "5000456070423", "composicao": "FORXIGA 10 mg: cada comprimido revestido contém 12,30 mg de dapagliflozina propanodiol, equivalente a 10 mg de dapagliflozina. Excipientes: celulose microcristalina, lactose, crospovidona, dióxido de silício, estearato de magnésio, álcool polivinílico, dióxido de titânio, macrogol, talco e óxido de ferro amarelo.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "803d26de-ab62-4d0f-9fa1-f2760addc7cb", "nome": "Nimesulida 100 mg", "codigoBarras": "7899620915039", "composicao": "Comprimidos: Nimesulida, lactose monoidratada, estearato de magnésio, celulose microcristalina, docusato de sódio, amidoglicolato de sódio, hiprolose, óleo vegetal hidrogenado.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "25382272-4847-4010-9f15-fef60c739788", "nome": "Dipirona 500mg", "codigoBarras": "7896714207551", "composicao": "Solução oral (gotas) de 500 mg/ml: frascos com 10 ml e 20 ml. Excipientes: sacarina sódica di-hidratada, metilparabeno, glicerol, edetato de cálcio dissódico hidratado, metabissulfito de sódio, sorbitol, amarelo de tartrazina e água purificada.", "tipoVolume": "Gotas", "qtdPorEmbalagem": 20, "tipoUnidade": "ML", "imagem": null }, { "id": "f2651e12-95ed-4235-89ff-8aa11583d0ff", "nome": "Amoxicilina 500 mg 21 comprimidos", "codigoBarras": "7898148298914", "composicao": "Excipiente: crospovidona, estearato de magnésio, celulose microcristalina, dióxido de silício coloidal, dióxido de titânio rutilo, glicolato de amido sódico, hidroxipropilcelulose/ polietilenoglicol e corante laca eritrosina.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 20, "tipoUnidade": "UN", "imagem": null }, { "id": "f5f15ce7-75ec-49ad-a2ec-da0bceb60877", "nome": "Losartana 50mg 30 comprimidos", "codigoBarras": "7896714208565", "composicao": "Cada comprimido revestido de losartana potás- sica contém: losartana potássica 50,00 mg Excipientes: lactose monoidratada, amido, dióxido de silício, estearato de magnésio, celulose microcristalina, hipromelose, macrogol e dióxido de titânio.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }, { "id": "a2abecb7-ea98-41ba-8845-3066536836be", "nome": "Dipirona 30 comprimidos", "codigoBarras": "7899547537208", "composicao": "Excipientes: Croscarmelose sódica, estearato de magnésio, dióxido de silício, sacarose e amido.", "tipoVolume": "Comprimido", "qtdPorEmbalagem": 30, "tipoUnidade": "UN", "imagem": null }]
 }
 
